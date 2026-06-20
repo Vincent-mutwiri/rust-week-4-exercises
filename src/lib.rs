@@ -24,6 +24,7 @@ pub struct Point<T> {
 impl<T> Point<T> {
     pub fn new(x: T, y: T) -> Self {
         // TODO: Implement constructor for Point
+        Self {x,y}
     }
 }
 
@@ -31,6 +32,7 @@ impl<T> Point<T> {
 pub trait BitcoinSerialize {
     fn serialize(&self) -> Vec<u8> {
         // TODO: Implement serialization to bytes
+        Vec::new()
     }
 }
 
@@ -46,6 +48,7 @@ pub struct LegacyTransaction {
 impl LegacyTransaction {
     pub fn builder() -> LegacyTransactionBuilder {
         // TODO: Return a new builder for constructing a transaction
+        LegacyTransactionBuilder::new()
     }
 }
 
@@ -60,32 +63,54 @@ pub struct LegacyTransactionBuilder {
 impl Default for LegacyTransactionBuilder {
     fn default() -> Self {
         // TODO: Implement default values
+        Self {
+            version:1,
+            inputs: Vec::new(),
+            outputs: Vec::new(),
+            lock_time: 0,
+        }
     }
 }
 
 impl LegacyTransactionBuilder {
     pub fn new() -> Self {
         // TODO: Initialize new builder by calling default
+        Self::default()
     }
 
     pub fn version(mut self, version: i32) -> Self {
         // TODO: Set the transaction version
+        self.version = version;
+        self
     }
 
     pub fn add_input(mut self, input: TxInput) -> Self {
         // TODO: Add input to the transaction
+        self.inputs.push(input);
+        self
     }
 
     pub fn add_output(mut self, output: TxOutput) -> Self {
         // TODO: Add output to the transaction
+        self.outputs.push(outputs);
+        self
     }
 
     pub fn lock_time(mut self, lock_time: u32) -> Self {
         // TODO: Set lock_time for transaction
+        self.lock_time = lock_time;
+        self
     }
 
     pub fn build(self) -> LegacyTransaction {
         // TODO: Build and return the final LegacyTransaction
+        LegacyTransaction{
+
+            version: self.version,
+            inputs: self.inputs,
+            ouputs: self.outputs,
+            lock_time: self.lock_time,
+        }
     }
 }
 
@@ -112,6 +137,22 @@ pub struct OutPoint {
 // Simple CLI argument parser
 pub fn parse_cli_args(args: &[String]) -> Result<CliCommand, BitcoinError> {
     // TODO: Match args to "send" or "balance" commands and parse required arguments
+        if args.is_empty(){
+            return Err (BitcoinError::ParseError("No arguments provided".to_string()));
+        }
+        match args[0].as_str(){
+            "send" => {
+                if args.len() < 3 {
+                    return Err(BitcoinError::ParseError("Missing amount or address for 'send' command".to_string()));
+                }
+                let amount = u64::from_str(&arg[1]).map_err(|_| BitcoinError::InvalidAmount)?;
+                let address = arg[2].clone();
+                Ok(CliCommand::Send{amount, address})
+            }
+            "balance" => Ok (CliCommand::Balance),
+            _=> Err(BitcoinError::ParseError(Format!("Unknown command: {}", args[0]))),
+        }
+
 }
 
 pub enum CliCommand {
@@ -126,6 +167,25 @@ impl TryFrom<&[u8]> for LegacyTransaction {
     fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
         // TODO: Parse binary data into a LegacyTransaction
         // Minimum length is 10 bytes (4 version + 4 inputs count + 4 lock_time)
+        if data.len() < 10 {
+            return Err (BitcoinError::InvalidTransaction)
+        }
+        //Parse version from the first 4 bytes
+        let mut version_bytes = [0u8;4];
+        version_bytes.copy_from_slice(&data[0..4]);
+        let version = i32::from_le_bytes(version_bytes);
+
+        let mut lock_time_bytes = [0u8;4];
+        let lock_start = data.len()-4;
+        lock_time_bytes.copy_from_slice(&data[lock_start..]);
+        let lock_time = u32::from_le_bytes(lock_time_bytes);
+
+        Ok (LegacyTransaction{
+            version,
+            inputs:Vec::new(),
+            outputs: Vec::new(),
+            lock_time,
+        })
     }
 }
 
@@ -133,5 +193,9 @@ impl TryFrom<&[u8]> for LegacyTransaction {
 impl BitcoinSerialize for LegacyTransaction {
     fn serialize(&self) -> Vec<u8> {
         // TODO: Serialize only version and lock_time (simplified)
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&self.version.to_le_bytes());
+        bytes.extend_from_slice(&self.lock_time.to_le_bytes());
+        bytes
     }
 }
