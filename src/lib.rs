@@ -92,7 +92,7 @@ impl LegacyTransactionBuilder {
 
     pub fn add_output(mut self, output: TxOutput) -> Self {
         // TODO: Add output to the transaction
-        self.outputs.push(outputs);
+        self.outputs.push(output);
         self
     }
 
@@ -108,7 +108,7 @@ impl LegacyTransactionBuilder {
 
             version: self.version,
             inputs: self.inputs,
-            ouputs: self.outputs,
+            outputs: self.outputs,
             lock_time: self.lock_time,
         }
     }
@@ -145,12 +145,12 @@ pub fn parse_cli_args(args: &[String]) -> Result<CliCommand, BitcoinError> {
                 if args.len() < 3 {
                     return Err(BitcoinError::ParseError("Missing amount or address for 'send' command".to_string()));
                 }
-                let amount = u64::from_str(&arg[1]).map_err(|_| BitcoinError::InvalidAmount)?;
+                let amount = u64::from_str(&args[1]).map_err(|_| BitcoinError::InvalidAmount)?;
                 let address = arg[2].clone();
                 Ok(CliCommand::Send{amount, address})
             }
             "balance" => Ok (CliCommand::Balance),
-            _=> Err(BitcoinError::ParseError(Format!("Unknown command: {}", args[0]))),
+            _=> Err(BitcoinError::ParseError(format!("Unknown command: {}", args[0]))),
         }
 
 }
