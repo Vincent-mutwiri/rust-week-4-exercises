@@ -24,7 +24,7 @@ pub struct Point<T> {
 impl<T> Point<T> {
     pub fn new(x: T, y: T) -> Self {
         // TODO: Implement constructor for Point
-        Self {x,y}
+        Self { x, y }
     }
 }
 
@@ -64,7 +64,7 @@ impl Default for LegacyTransactionBuilder {
     fn default() -> Self {
         // TODO: Implement default values
         Self {
-            version:1,
+            version: 1,
             inputs: Vec::new(),
             outputs: Vec::new(),
             lock_time: 0,
@@ -104,8 +104,7 @@ impl LegacyTransactionBuilder {
 
     pub fn build(self) -> LegacyTransaction {
         // TODO: Build and return the final LegacyTransaction
-        LegacyTransaction{
-
+        LegacyTransaction {
             version: self.version,
             inputs: self.inputs,
             outputs: self.outputs,
@@ -137,22 +136,28 @@ pub struct OutPoint {
 // Simple CLI argument parser
 pub fn parse_cli_args(args: &[String]) -> Result<CliCommand, BitcoinError> {
     // TODO: Match args to "send" or "balance" commands and parse required arguments
-        if args.is_empty(){
-            return Err (BitcoinError::ParseError("No arguments provided".to_string()));
-        }
-        match args[0].as_str(){
-            "send" => {
-                if args.len() < 3 {
-                    return Err(BitcoinError::ParseError("Missing amount or address for 'send' command".to_string()));
-                }
-                let amount = u64::from_str(&args[1]).map_err(|_| BitcoinError::InvalidAmount)?;
-                let address = args[2].clone();
-                Ok(CliCommand::Send{amount, address})
+    if args.is_empty() {
+        return Err(BitcoinError::ParseError(
+            "No arguments provided".to_string(),
+        ));
+    }
+    match args[0].as_str() {
+        "send" => {
+            if args.len() < 3 {
+                return Err(BitcoinError::ParseError(
+                    "Missing amount or address for 'send' command".to_string(),
+                ));
             }
-            "balance" => Ok (CliCommand::Balance),
-            _=> Err(BitcoinError::ParseError(format!("Unknown command: {}", args[0]))),
+            let amount = u64::from_str(&args[1]).map_err(|_| BitcoinError::InvalidAmount)?;
+            let address = args[2].clone();
+            Ok(CliCommand::Send { amount, address })
         }
-
+        "balance" => Ok(CliCommand::Balance),
+        _ => Err(BitcoinError::ParseError(format!(
+            "Unknown command: {}",
+            args[0]
+        ))),
+    }
 }
 
 pub enum CliCommand {
@@ -168,37 +173,34 @@ impl TryFrom<&[u8]> for LegacyTransaction {
         // TODO: Parse binary data into a LegacyTransaction
         // Minimum length is 10 bytes (4 version + 4 inputs count + 4 lock_time)
         if data.len() < 16 {
-            return Err (BitcoinError::InvalidTransaction);
+            return Err(BitcoinError::InvalidTransaction);
         }
-       let mut offset = 0;
-       
-       let mut version_bytes = [0u8; 4];
-       version_bytes.copy_from_slice(&data[offset..offset+4]);
-       let version =i32::from_le_bytes(version_bytes);
-       offset+=4;
-        
+        let mut offset = 0;
+
+        let mut version_bytes = [0u8; 4];
+        version_bytes.copy_from_slice(&data[offset..offset + 4]);
+        let version = i32::from_le_bytes(version_bytes);
+        offset += 4;
 
         // 2. Parse Inputs Count
-        let mut input_count_bytes = [0u8;4];
-        input_count_bytes.copy_from_slice(&data[offset..offset+4]);
+        let mut input_count_bytes = [0u8; 4];
+        input_count_bytes.copy_from_slice(&data[offset..offset + 4]);
         let input_count = u32::from_le_bytes(input_count_bytes) as usize;
         offset += 4;
 
-        
         // 3. Parse Outputs Count
-      
-         let mut output_count_bytes = [0u8; 4];
-        output_count_bytes.copy_from_slice(&data[offset..offset+4]);
+
+        let mut output_count_bytes = [0u8; 4];
+        output_count_bytes.copy_from_slice(&data[offset..offset + 4]);
         let output_count = u32::from_le_bytes(output_count_bytes) as usize;
         offset += 4;
 
-
         // 4. Parse Lock Time
-       
-         let mut lock_time_bytes = [0u8; 4];
-        lock_time_bytes.copy_from_slice(&data[offset..offset+4]);
+
+        let mut lock_time_bytes = [0u8; 4];
+        lock_time_bytes.copy_from_slice(&data[offset..offset + 4]);
         let lock_time = u32::from_le_bytes(lock_time_bytes);
-        
+
         // Reserve capacity for inputs and outputs but don't parse them
         let inputs = Vec::with_capacity(input_count);
         let outputs = Vec::with_capacity(output_count);
@@ -209,7 +211,6 @@ impl TryFrom<&[u8]> for LegacyTransaction {
             outputs,
             lock_time,
         })
-
     }
 }
 
