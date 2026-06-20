@@ -146,7 +146,7 @@ pub fn parse_cli_args(args: &[String]) -> Result<CliCommand, BitcoinError> {
                     return Err(BitcoinError::ParseError("Missing amount or address for 'send' command".to_string()));
                 }
                 let amount = u64::from_str(&args[1]).map_err(|_| BitcoinError::InvalidAmount)?;
-                let address = arg[2].clone();
+                let address = args[2].clone();
                 Ok(CliCommand::Send{amount, address})
             }
             "balance" => Ok (CliCommand::Balance),
@@ -174,6 +174,18 @@ impl TryFrom<&[u8]> for LegacyTransaction {
         let mut version_bytes = [0u8;4];
         version_bytes.copy_from_slice(&data[0..4]);
         let version = i32::from_le_bytes(version_bytes);
+
+        let input_count = data[4] as usize;
+        let mut inputs = Vec::new();
+
+        for _ in 0..input_count{
+            inputs.push(TxInput{
+                previous_output: Output { txid: [0u8; 32], vout:0},
+                script_sig: Vec::new();
+                sequence:0,
+            });
+        }
+        
 
         let mut lock_time_bytes = [0u8;4];
         let lock_start = data.len()-4;
