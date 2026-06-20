@@ -167,37 +167,49 @@ impl TryFrom<&[u8]> for LegacyTransaction {
     fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
         // TODO: Parse binary data into a LegacyTransaction
         // Minimum length is 10 bytes (4 version + 4 inputs count + 4 lock_time)
-        if data.len() < 10 {
-            return Err (BitcoinError::InvalidTransaction)
+        if data.len() < 16 {
+            return Err (BitcoinError::InvalidTransaction);
         }
-        //Parse version from the first 4 bytes
-        let mut version_bytes = [0u8;4];
-        version_bytes.copy_from_slice(&data[0..4]);
-        let version = i32::from_le_bytes(version_bytes);
-
-        let input_count = data[4] as usize;
-        let mut inputs = Vec::new();
-
-        for _ in 0..input_count{
-            inputs.push(TxInput{
-                previous_output: Output { txid: [0u8; 32], vout:0},
-                script_sig: Vec::new();
-                sequence:0,
-            });
-        }
+       let mut offset = 0;
+       
+       let mut version_bytes = [0u8; 4];
+       version_bytes.copy_from_slice(&data[offset..offset+4]);
+       let version =i32::from_le_bytes(version_bytes);
+       offset+=4;
         
 
-        let mut lock_time_bytes = [0u8;4];
-        let lock_start = data.len()-4;
-        lock_time_bytes.copy_from_slice(&data[lock_start..]);
-        let lock_time = u32::from_le_bytes(lock_time_bytes);
+        // 2. Parse Inputs Count
+        let mut input_count_bytes = [0u8;4];
+        input_count_bytes.copy_from_slice(&data[offset..offset+4]);
+        let input_count = u32::from_le_bytes(input_count_bytes) as usize;
+        offset += 4;
 
-        Ok (LegacyTransaction{
+        
+        // 3. Parse Outputs Count
+      
+         let mut output_count_bytes = [0u8; 4];
+        output_count_bytes.copy_from_slice(&data[offset..offset+4]);
+        let output_count = u32::from_le_bytes(output_count_bytes) as usize;
+        offset += 4;
+
+
+        // 4. Parse Lock Time
+       
+         let mut lock_time_bytes = [0u8; 4];
+        lock_time_bytes.copy_from_slice(&data[offset..offset+4]);
+        let lock_time = u32::from_le_bytes(lock_time_bytes);
+        
+        // Reserve capacity for inputs and outputs but don't parse them
+        let inputs = Vec::with_capacity(input_count);
+        let outputs = Vec::with_capacity(output_count);
+
+        Ok(LegacyTransaction {
             version,
-            inputs:Vec::new(),
-            outputs: Vec::new(),
+            inputs,
+            outputs,
             lock_time,
         })
+
     }
 }
 
